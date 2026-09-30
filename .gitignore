@@ -4,6 +4,7 @@ __pycache__/
 .env
 *.pkl
 *.joblib
+!ml/models/*.joblib
 .vscode/
 node_modules/
 dist/

@@ -1,0 +1,13 @@
+product_name,brand,category,platform,price,date,availability,capacity,model,data_source,day,month,year,day_of_week
+Samsung 253L Refrigerator,Samsung,Refrigerator,Amazon,28999.0,2026-01-01,Available,253 L,RT28-253L,sample_historical,1,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Amazon,28499.0,2026-01-08,Available,253 L,RT28-253L,sample_historical,8,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Amazon,27999.0,2026-01-15,Available,253 L,RT28-253L,sample_historical,15,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Amazon,28999.0,2026-01-22,Available,253 L,RT28-253L,sample_historical,22,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Flipkart,27999.0,2026-01-01,Available,253 L,RT28-253L,sample_historical,1,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Flipkart,27499.0,2026-01-08,Available,253 L,RT28-253L,sample_historical,8,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Flipkart,26999.0,2026-01-15,Available,253 L,RT28-253L,sample_historical,15,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Flipkart,27499.0,2026-01-22,Available,253 L,RT28-253L,sample_historical,22,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Croma,29499.0,2026-01-01,Available,253 L,RT28-253L,sample_historical,1,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Croma,28999.0,2026-01-08,Available,253 L,RT28-253L,sample_historical,8,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Croma,28499.0,2026-01-15,Available,253 L,RT28-253L,sample_historical,15,1,2026,3
+Samsung 253L Refrigerator,Samsung,Refrigerator,Croma,28999.0,2026-01-22,Available,253 L,RT28-253L,sample_historical,22,1,2026,3

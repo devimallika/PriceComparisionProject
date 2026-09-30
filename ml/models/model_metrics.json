@@ -1,0 +1,43 @@
+{
+    "comparison": [
+        {
+            "model_name": "Linear Regression",
+            "mae": 427.54,
+            "mse": 218809.07,
+            "rmse": 467.77,
+            "r2": -2.9386
+        },
+        {
+            "model_name": "Decision Tree Regression",
+            "mae": 500.0,
+            "mse": 250000.0,
+            "rmse": 500.0,
+            "r2": -3.5
+        },
+        {
+            "model_name": "Random Forest Regression",
+            "mae": 193.33,
+            "mse": 57533.33,
+            "rmse": 239.86,
+            "r2": -0.0356
+        }
+    ],
+    "selected_model": {
+        "model_name": "Random Forest Regression",
+        "mae": 193.33,
+        "mse": 57533.33,
+        "rmse": 239.86,
+        "r2": -0.0356
+    },
+    "features": [
+        "platform",
+        "brand",
+        "category",
+        "capacity",
+        "model",
+        "day",
+        "month",
+        "year",
+        "day_of_week"
+    ]
+}
