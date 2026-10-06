@@ -99,9 +99,6 @@ def get_flipkart_price(
                     except Exception:
                         continue
 
-                if price is None:
-                    continue
-
                 # Get clean product name
                 lines = [
                     line.strip()
@@ -154,10 +151,13 @@ def get_flipkart_price(
                     break
 
                 if name is None:
-                    name = "Unknown Flipkart Product"
+                    name = f"Samsung {capacity} Refrigerator ({model})" if model else "Samsung Refrigerator"
 
+                # Check availability
                 availability = "Available"
-                if "out of stock" in text_lower or "currently unavailable" in text_lower:
+                if "notify me" in text_lower:
+                    availability = "Notify Me"
+                elif "out of stock" in text_lower or "currently unavailable" in text_lower:
                     availability = "Out of Stock"
 
                 result = {

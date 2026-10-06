@@ -152,15 +152,14 @@ def get_amazon_price(
                         except Exception:
                             pass
 
-                if price is None:
-                    continue
-
                 # ------------------------------------------------
                 # AVAILABILITY
                 # ------------------------------------------------
 
                 availability = "Available"
-                if (
+                if "notify me" in text_lower:
+                    availability = "Notify Me"
+                elif (
                     "out of stock" in text_lower
                     or "currently unavailable" in text_lower
                 ):

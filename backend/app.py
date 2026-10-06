@@ -1,5 +1,6 @@
 import os
 import sys
+import concurrent.futures
 import re
 from datetime import datetime
 from flask import Flask, jsonify, request
@@ -166,17 +167,21 @@ def search_product():
             "error": "Product name is required"
         }), 400
 
-    product = products_collection.find_one(
-        {
-            "product_name": {
-                "$regex": product_name,
-                "$options": "i"
+    try:
+        product = products_collection.find_one(
+            {
+                "product_name": {
+                    "$regex": product_name,
+                    "$options": "i"
+                }
+            },
+            {
+                "_id": 0
             }
-        },
-        {
-            "_id": 0
-        }
-    )
+        )
+    except Exception as e:
+        print("Database error in search_product:", e)
+        return jsonify({"message": "Database unavailable"}), 503
 
     if not product:
 
@@ -188,28 +193,84 @@ def search_product():
 
 
 # ============================================================
+# GET AVAILABLE MODELS (for frontend dropdown)
+# ============================================================
+
+# Known/verified models — used as fallback when DB is unavailable
+KNOWN_MODELS = {
+    "samsung": {
+        "refrigerator": [
+            "RT40H30U3THL",
+            "RT40H30U2PHL",
+            "RT28C3452S8",
+            "RT34C4522S8",
+            "RT42CB66228",
+        ]
+    }
+}
+
+@app.route("/api/products/models")
+def get_models():
+    brand = (request.args.get("brand") or "").strip().lower()
+    category = (request.args.get("category") or "").strip().lower()
+
+    models = []
+
+    # ── Try MongoDB first ──────────────────────────────────────
+    try:
+        query = {}
+        if brand:
+            query["brand"] = {"$regex": f"^{re.escape(brand)}$", "$options": "i"}
+        if category:
+            query["category"] = {"$regex": re.escape(category), "$options": "i"}
+
+        # Pull distinct model values from price_history
+        raw = price_history_collection.distinct("model", query)
+        models = [m for m in raw if m]  # filter None / empty
+    except Exception as e:
+        print("DB unavailable for /api/products/models:", e)
+
+    # ── Fallback to static list when DB empty/unreachable ─────
+    if not models:
+        fallback = KNOWN_MODELS.get(brand, {}).get(category, [])
+        if not fallback and brand == "samsung":
+            # Return all Samsung models regardless of category
+            for cat_models in KNOWN_MODELS["samsung"].values():
+                fallback.extend(cat_models)
+        models = fallback
+
+    # Deduplicate and sort
+    models = sorted(set(models))
+    return jsonify(models)
+
+
+# ============================================================
 # COMPARE STORED PRICES
 # ============================================================
 
 @app.route("/api/compare/<product_name>")
 def compare_prices(product_name):
 
-    prices = list(
-        price_history_collection.find(
-            {
-                "product_name": {
-                    "$regex": product_name,
-                    "$options": "i"
+    try:
+        prices = list(
+            price_history_collection.find(
+                {
+                    "product_name": {
+                        "$regex": product_name,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "_id": 0,
+                    "platform": 1,
+                    "price": 1,
+                    "availability": 1
                 }
-            },
-            {
-                "_id": 0,
-                "platform": 1,
-                "price": 1,
-                "availability": 1
-            }
+            )
         )
-    )
+    except Exception as e:
+        print("Database error in compare_prices:", e)
+        return jsonify({"product_name": product_name, "prices": {}}), 200
 
     comparison = {}
 
@@ -290,6 +351,7 @@ def save_live_price(result, brand, category, model):
             "product_name": result["product_name"],
             "brand": brand,
             "category": category,
+            "model": model,
             "platform": result["platform"],
             "price": result["price"],
             "availability": result.get("availability", "Available"),
@@ -298,7 +360,7 @@ def save_live_price(result, brand, category, model):
 
         # Save to MongoDB
         price_history_collection.insert_one(history_record)
-        print("Live price saved:", result["platform"], result["price"])
+        print("Live price saved:", result["platform"], result["price"], f"({result.get('availability')})")
 
     except Exception as e:
         print("Could not save live price to MongoDB:", e)
@@ -338,143 +400,49 @@ def live_compare():
 
     results = []
 
+    # -------------------------------------------------------
+    # Concurrent execution of scrapers using threads
+    # -------------------------------------------------------
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        future_to_platform = {
+            executor.submit(
+                get_amazon_price,
+                search_query,
+                brand=brand,
+                capacity=capacity,
+                model=model
+            ): "Amazon",
+            executor.submit(
+                get_flipkart_price,
+                search_query,
+                brand=brand,
+                capacity=capacity,
+                model=model
+            ): "Flipkart",
+            executor.submit(
+                get_vijay_sales_price,
+                search_query,
+                brand=brand,
+                capacity=capacity,
+                model=model
+            ): "Vijay Sales",
+        }
 
-    # ========================================================
-    # AMAZON
-    # ========================================================
-
-    try:
-
-        amazon_result = get_amazon_price(
-
-            search_query,
-
-            brand=brand,
-
-            capacity=capacity,
-
-            model=model
-
-        )
-
-        amazon_result["availability"] = amazon_result.get(
-            "availability",
-            "Available"
-        )
-
-        results.append(
-            amazon_result
-        )
-
-    except Exception as e:
-
-        print(
-            "Amazon error:",
-            e
-        )
-
-        results.append({
-
-            "platform": "Amazon",
-
-            "product_name": None,
-
-            "price": None,
-
-            "availability": "Price unavailable"
-
-        })
-
-
-    # ========================================================
-    # FLIPKART
-    # ========================================================
-
-    try:
-
-        flipkart_result = get_flipkart_price(
-
-            search_query,
-
-            brand=brand,
-
-            capacity=capacity,
-
-            model=model
-
-        )
-
-        flipkart_result["availability"] = flipkart_result.get(
-            "availability",
-            "Available"
-        )
-
-        results.append(
-            flipkart_result
-        )
-
-    except Exception as e:
-
-        print(
-            "Flipkart error:",
-            e
-        )
-
-        results.append({
-
-            "platform": "Flipkart",
-
-            "product_name": None,
-
-            "price": None,
-
-            "availability": "Price unavailable"
-
-        })
-
-
-    # ========================================================
-    # VIJAY SALES
-    # ========================================================
-
-    try:
-
-        vijay_result = get_vijay_sales_price(
-
-            search_query,
-
-            brand=brand,
-
-            capacity=capacity,
-
-            model=model
-
-        )
-
-        results.append(
-            vijay_result
-        )
-
-    except Exception as e:
-
-        print(
-            "Vijay Sales error:",
-            e
-        )
-
-        results.append({
-
-            "platform": "Vijay Sales",
-
-            "product_name": None,
-
-            "price": None,
-
-            "availability": "Price unavailable"
-
-        })
-
-
+        for future, platform in future_to_platform.items():
+            try:
+                # Allow up to 20 seconds per marketplace before timing out
+                result = future.result(timeout=20)
+                # Ensure availability key is present
+                result["availability"] = result.get("availability", "Available")
+                results.append(result)
+            except Exception as e:
+                print(f"{platform} error:", e)
+                results.append({
+                    "platform": platform,
+                    "product_name": None,
+                    "price": None,
+                    "availability": "Price unavailable"
+                })
     # ========================================================
     # SAVE SUCCESSFUL LIVE PRICES
     # ========================================================
@@ -508,19 +476,20 @@ def live_compare():
 
         price = result.get("price")
 
-        availability = result.get(
-            "availability",
-            "Available"
-        )
+        availability = (result.get("availability") or "").lower()
 
         if (
             price is not None
-            and availability.lower() != "out of stock"
+            and "out of stock" not in availability
+            and "notify me" not in availability
+            and "unavailable" not in availability
         ):
 
             available_results.append(
                 result
             )
+
+    priced_results = [r for r in results if r.get("price") is not None]
 
 
     # ========================================================
@@ -535,6 +504,7 @@ def live_compare():
         )
 
         recommendation = {
+            "status": "available",
             "platform": recommended["platform"],
             "price": recommended["price"],
             "current_price": recommended["price"],
@@ -562,16 +532,45 @@ def live_compare():
             except Exception as e:
                 print("Could not compute prediction for recommendation:", e)
 
+    elif priced_results:
+
+        recommendation = {
+            "status": "out_of_stock",
+            "platform": None,
+            "price": None,
+            "current_price": None,
+            "predicted_price": None,
+            "product_name": None,
+            "availability": "Out Of Stock",
+            "reason": "Prices found, but no currently available purchase option."
+        }
+
+        if predict_price is not None:
+            try:
+                pred = predict_price(
+                    platform=priced_results[0]["platform"],
+                    brand=brand,
+                    category=category,
+                    capacity=capacity,
+                    model=model
+                )
+                if pred.get("status") == "success":
+                    recommendation["predicted_price"] = pred["predicted_price"]
+                    recommendation["model_used"] = pred.get("model_used")
+            except Exception:
+                pass
+
     else:
 
         recommendation = {
+            "status": "none",
             "platform": None,
             "price": None,
             "current_price": None,
             "predicted_price": None,
             "product_name": None,
             "availability": "Price unavailable",
-            "reason": "No available price"
+            "reason": "No price information found"
         }
 
 
