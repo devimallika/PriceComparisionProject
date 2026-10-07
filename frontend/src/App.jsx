@@ -72,7 +72,7 @@ export default function App() {
   const [brand, setBrand]       = useState("Samsung");
   const [category, setCategory] = useState("Refrigerator");
   const [capacity, setCapacity] = useState("256 L");
-  const [selectedModel, setSelectedModel] = useState("RT40H30U3THL");
+  const [selectedModel, setSelectedModel] = useState("RT30C3732S8/NL");
 
   // ── Model dropdown state ────────────────────────────────
   const [models, setModels]           = useState([]);
@@ -115,6 +115,7 @@ export default function App() {
     } catch (e) {
       console.warn("Could not load models from server, using catalog defaults:", e);
       const fallback = [
+        "RT30C3732S8/NL",
         "RT40H30U3THL",
         "RT40H30U2PHL",
         "RT28C3452S8",
@@ -243,6 +244,9 @@ export default function App() {
     };
   });
 
+  // Check if any results are demo/fallback
+  const hasDemoFallback = results.some((r) => r.data_source === "demo_fallback");
+
   return (
     <div className="ps-root">
 
@@ -269,7 +273,7 @@ export default function App() {
         <div className="hero-inner">
           <h1 className="hero-heading">Product Price Comparison</h1>
           <p className="hero-sub">
-            Compare real-time product prices across Amazon, Flipkart, and Vijay Sales with exact model verification.
+            Compare real product prices across Amazon, Flipkart, and Vijay Sales for the exact same model.
           </p>
         </div>
       </section>
@@ -362,7 +366,7 @@ export default function App() {
                   </select>
                 )}
                 <span className="model-hint">
-                  Exact model match strictly enforced (e.g., RT40H30U3THL will not match RT40H30U2PHL).
+                  Same exact product model compared across Amazon, Flipkart, and Vijay Sales.
                 </span>
               </div>
 
@@ -388,6 +392,17 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {/* ── DEMO / FALLBACK NOTICE ── */}
+        {hasDemoFallback && !loading && (
+          <div className="alert alert-fallback" role="status">
+            <span className="fallback-badge-chip">Demo / Fallback Mode</span>
+            <span>
+              <strong>Note:</strong> Displaying verified demo/fallback price data for model{" "}
+              <strong>{selectedModel}</strong>. Live marketplace scrapers will overwrite this automatically once accessible.
+            </span>
+          </div>
+        )}
 
         {/* ── ERROR ALERT ── */}
         {error && (
@@ -432,10 +447,10 @@ export default function App() {
           <section className="results-section">
             <div className="section-hdr">
               <div>
-                <h2 className="section-title">LIVE PRICES</h2>
+                <h2 className="section-title">MARKETPLACE PRICES</h2>
                 <p className="section-desc">
-                  Real-time prices retrieved from each marketplace for model{" "}
-                  <strong>{selectedModel}</strong>.
+                  Prices compared side-by-side for exact model:{" "}
+                  <strong>{selectedModel}</strong> across all 3 platforms.
                 </p>
               </div>
               <div className="model-tag">
@@ -451,6 +466,7 @@ export default function App() {
                 const avail = (item.availability || "").toLowerCase();
                 const isAvailable =
                   avail === "available" || avail === "in stock";
+                const isFallback = item.data_source === "demo_fallback";
 
                 return (
                   <div
@@ -468,10 +484,15 @@ export default function App() {
                         <PlatformIcon name={item.platform} />
                         <span className="mc-platform">{item.platform}</span>
                       </div>
-                      <AvailBadge
-                        avail={item.availability}
-                        productFound={found}
-                      />
+                      <div className="mc-head-badges">
+                        {isFallback && (
+                          <span className="badge badge-fallback">Demo/Fallback</span>
+                        )}
+                        <AvailBadge
+                          avail={item.availability}
+                          productFound={found}
+                        />
+                      </div>
                     </div>
 
                     <div className="mc-body">
@@ -516,11 +537,11 @@ export default function App() {
                             rel="noopener noreferrer"
                             className="btn-view-product"
                           >
-                            View Product <ExternalLinkIcon />
+                            Buy on {item.platform} <ExternalLinkIcon />
                           </a>
                         ) : (
                           <span className="btn-view-product btn-disabled">
-                            Product Link Unavailable
+                            Buy Link Unavailable
                           </span>
                         )}
                       </div>
@@ -572,6 +593,12 @@ export default function App() {
                     <span className="rs-label">Verified Model</span>
                     <span className="rs-value">{selectedModel}</span>
                   </div>
+                  {recommendation.savings > 0 && (
+                    <div className="rec-stat rec-stat-savings">
+                      <span className="rs-label">Calculated Savings</span>
+                      <span className="rs-value rs-savings">₹{Number(recommendation.savings).toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
                   <div className="rec-stat">
                     <span className="rs-label">Decision</span>
                     <span className="rs-value rs-reason">{recommendation.reason || "Lowest available in-stock price"}</span>

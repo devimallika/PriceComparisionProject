@@ -89,7 +89,7 @@ def get_vijay_sales_price(
                 card_text = product_locator.inner_text()
 
             print("\n--- VIJAY SALES PRODUCT FOUND ---")
-            print(card_text)
+            print(card_text.encode("ascii", "replace").decode("ascii"))
 
             # --------------------------------------------------------
             # CARD-LEVEL MODEL CHECK

@@ -516,6 +516,47 @@ body {
 .badge-oos     { background: #fee2e2; color: var(--c-red); }
 .badge-notify  { background: var(--c-orange-bg); color: var(--c-orange); }
 .badge-unavail { background: var(--c-slate); color: var(--c-text-3); }
+.badge-fallback{ background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+
+.mc-head-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.alert-fallback {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #3730a3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+}
+
+.fallback-badge-chip {
+  background: #4338ca;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.rec-stat-savings {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.rs-savings {
+  color: #059669;
+  font-size: 20px;
+}
 
 /* ─────────────────────── PLATFORM ICON ─────────────────────── */
 .plat-icon {
