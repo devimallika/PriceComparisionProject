@@ -59,99 +59,65 @@ def get_flipkart_price(
                 ):
                     continue
 
-                # Check exact model when provided
+                # Model check
                 if model:
                     if model.lower() not in text_lower:
                         continue
 
                 # Find price
-                price_elements = product.locator(
-                    "div"
-                ).filter(
-                    has_text="₹"
-                )
-
+                # Find price using robust text selector for rupee symbol
                 price = None
-
-                for j in range(price_elements.count()):
-
+                price_elem = product.locator('text=₹').first
+                if price_elem.count() > 0:
                     try:
-                        price_text = (
-                            price_elements
-                            .nth(j)
-                            .inner_text()
-                            .strip()
-                        )
-
-                        cleaned_price = (
-                            price_text
-                            .replace("₹", "")
-                            .replace(",", "")
-                            .strip()
-                        )
-
+                        price_text = price_elem.inner_text().strip()
+                        cleaned_price = price_text.replace('₹', '').replace(',', '').strip()
                         if cleaned_price.isdigit():
-
                             price = int(cleaned_price)
-
-                            break
-
                     except Exception:
-                        continue
+                        pass
+                # Fallback: generic search for divs with rupee text if above fails
+                if price is None:
+                    price_elements = product.locator('div').filter(has_text='₹')
+                    for j in range(price_elements.count()):
+                        try:
+                            price_text = price_elements.nth(j).inner_text().strip()
+                            cleaned_price = price_text.replace('₹', '').replace(',', '').strip()
+                            if cleaned_price.isdigit():
+                                price = int(cleaned_price)
+                                break
+                        except Exception:
+                            continue
 
-                # Get clean product name
-                lines = [
-                    line.strip()
-                    for line in text.split("\n")
-                    if line.strip()
-                ]
-
-                name = None
-
-                for line in lines:
-
-                    line_lower = line.lower()
-
-                    # Skip non-product information
-                    if line_lower == "add to compare":
-                        continue
-
-                    if "rating" in line_lower:
-                        continue
-
-                    if "review" in line_lower:
-                        continue
-
-                    if "digital inverter compressor" in line_lower:
-                        continue
-
-                    if "built-in stabilizer" in line_lower:
-                        continue
-
-                    if "warranty" in line_lower:
-                        continue
-
-                    if line.startswith("₹"):
-                        continue
-
-                    if "off" in line_lower:
-                        continue
-
-                    if "days price" in line_lower:
-                        continue
-
-                    if (
-                        "only " in line_lower
-                        and "left" in line_lower
-                    ):
-                        continue
-
-                    # First suitable line = product name
-                    name = line
-                    break
-
-                if name is None:
-                    name = f"Samsung {capacity} Refrigerator ({model})" if model else "Samsung Refrigerator"
+                # ------------------------------------------------
+                # PRODUCT TITLE
+                # ------------------------------------------------
+                # Try known Flipkart title selectors (including current layout)
+                title_loc = product.locator('div.RG5Slk, div._4rR01T, div.s1Q9rs').first
+                if title_loc.count() > 0:
+                    name = title_loc.inner_text().strip()
+                else:
+                    # Fallback: derive name from text lines as before
+                    lines = [line.strip() for line in text.split("\n") if line.strip()]
+                    name = None
+                    for line in lines:
+                        low = line.lower()
+                        if low in ["add to compare", "rating", "review"]:
+                            continue
+                        if low.startswith("₹"):
+                            continue
+                        if "off" in low or "days price" in low:
+                            continue
+                        if "only " in low and "left" in low:
+                            continue
+                        name = line
+                        break
+                    if name is None:
+                        name = f"Samsung {capacity} Refrigerator ({model})" if model else "Samsung Refrigerator"
+                # Exact model verification (if model provided)
+                # if model:
+                #     if model.lower() not in name.lower():
+                #         continue
 
                 # Check availability
                 availability = "Available"

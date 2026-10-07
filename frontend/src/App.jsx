@@ -107,9 +107,21 @@ export default function App() {
         const list = Array.isArray(data) ? data : [];
         setModels(list);
         if (list.length > 0) setSelectedModel(list[0]);
+      } else {
+        console.warn("Failed to load models, status:", res.status);
       }
     } catch (e) {
       console.warn("Could not load models:", e);
+      // Fallback static models for Samsung Refrigerator
+      const fallback = [
+        "RT40H30U3THL",
+        "RT40H30U2PHL",
+        "RT28C3452S8",
+        "RT34C4522S8",
+        "RT42CB66228",
+      ];
+      setModels(fallback);
+      setSelectedModel(fallback[0]);
     } finally {
       setModelsLoading(false);
     }

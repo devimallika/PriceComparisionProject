@@ -428,13 +428,21 @@ def live_compare():
             ): "Vijay Sales",
         }
 
+        # Execute each scraper with an individual timeout
+        PER_FUTURE_TIMEOUT = 15  # seconds
         for future, platform in future_to_platform.items():
             try:
-                # Allow up to 20 seconds per marketplace before timing out
-                result = future.result(timeout=20)
-                # Ensure availability key is present
+                result = future.result(timeout=PER_FUTURE_TIMEOUT)
                 result["availability"] = result.get("availability", "Available")
                 results.append(result)
+            except concurrent.futures.TimeoutError:
+                print(f"{platform} timed out after {PER_FUTURE_TIMEOUT} seconds")
+                results.append({
+                    "platform": platform,
+                    "product_name": None,
+                    "price": None,
+                    "availability": "Price unavailable"
+                })
             except Exception as e:
                 print(f"{platform} error:", e)
                 results.append({
