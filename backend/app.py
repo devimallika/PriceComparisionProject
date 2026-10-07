@@ -441,7 +441,8 @@ def live_compare():
                     "platform": platform,
                     "product_name": None,
                     "price": None,
-                    "availability": "Price unavailable"
+                    "availability": "Price unavailable",
+                    "product_url": None
                 })
             except Exception as e:
                 print(f"{platform} error:", e)
@@ -449,7 +450,8 @@ def live_compare():
                     "platform": platform,
                     "product_name": None,
                     "price": None,
-                    "availability": "Price unavailable"
+                    "availability": "Price unavailable",
+                    "product_url": None
                 })
     # ========================================================
     # SAVE SUCCESSFUL LIVE PRICES

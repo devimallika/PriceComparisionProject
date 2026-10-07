@@ -166,6 +166,17 @@ def get_amazon_price(
                     availability = "Out of Stock"
 
 
+                # Extract product link if available
+                product_url = None
+                link_el = product.locator("h2 a").first
+                if link_el.count() > 0:
+                    try:
+                        href = link_el.get_attribute("href")
+                        if href:
+                            product_url = href if href.startswith("http") else f"https://www.amazon.in{href}"
+                    except Exception:
+                        pass
+
                 # ------------------------------------------------
                 # RESULT
                 # ------------------------------------------------
@@ -178,7 +189,9 @@ def get_amazon_price(
 
                     "price": price,
 
-                    "availability": availability
+                    "availability": availability,
+
+                    "product_url": product_url
 
                 }
 
@@ -209,7 +222,9 @@ def get_amazon_price(
 
             "price": None,
 
-            "availability": "Price unavailable"
+            "availability": "Price unavailable",
+
+            "product_url": None
 
         }
 

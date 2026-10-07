@@ -21,7 +21,8 @@ def get_vijay_sales_price(
         "platform": "Vijay Sales",
         "product_name": None,
         "price": None,
-        "availability": "Price unavailable"
+        "availability": "Price unavailable",
+        "product_url": None
     }
 
     try:
@@ -143,7 +144,8 @@ def get_vijay_sales_price(
                 "platform": "Vijay Sales",
                 "product_name": prod_name,
                 "price": price,
-                "availability": availability
+                "availability": availability,
+                "product_url": url
             }
 
     except Exception as e:

@@ -119,6 +119,17 @@ def get_flipkart_price(
                 #     if model.lower() not in name.lower():
                 #         continue
 
+                # Extract product link if available
+                product_url = None
+                link_loc = product.locator("a").first
+                if link_loc.count() > 0:
+                    try:
+                        href = link_loc.get_attribute("href")
+                        if href:
+                            product_url = href if href.startswith("http") else f"https://www.flipkart.com{href}"
+                    except Exception:
+                        pass
+
                 # Check availability
                 availability = "Available"
                 if "notify me" in text_lower:
@@ -130,7 +141,8 @@ def get_flipkart_price(
                     "platform": "Flipkart",
                     "product_name": name,
                     "price": price,
-                    "availability": availability
+                    "availability": availability,
+                    "product_url": product_url
                 }
 
                 browser.close()
@@ -152,7 +164,8 @@ def get_flipkart_price(
             "platform": "Flipkart",
             "product_name": None,
             "price": None,
-            "availability": "Price unavailable"
+            "availability": "Price unavailable",
+            "product_url": None
         }
 
 
