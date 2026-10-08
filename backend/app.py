@@ -367,6 +367,56 @@ def save_live_price(result, brand, category, model):
         print("Could not save live price to MongoDB:", e)
 
 
+
+# ============================================================
+# DEMO / DUMMY PRICE DATA (used only when live scraping fails)
+# ADD NEW MODELS HERE -> {model: {platform: price}}
+# ============================================================
+
+DEMO_PRICES = {
+    "RT30C3732S8/NL": {"Amazon": 31750, "Flipkart": 31800, "Vijay Sales": 31800},
+    "RT40H30U3THL":   {"Amazon": 31990, "Flipkart": 31490, "Vijay Sales": 32250},
+    "RT40H30U2PHL":   {"Amazon": 30490, "Flipkart": 30690, "Vijay Sales": 30990},
+    "RT28C3452S8":    {"Amazon": 26990, "Flipkart": 27290, "Vijay Sales": 26790},
+    "RT34C4522S8":    {"Amazon": 29490, "Flipkart": 29190, "Vijay Sales": 29690},
+    "RT42CB66228":    {"Amazon": 36990, "Flipkart": 37490, "Vijay Sales": 36590},
+}
+
+SEARCH_URLS = {
+    "Amazon": "https://www.amazon.in/s?k=Samsung+{base}",
+    "Flipkart": "https://www.flipkart.com/search?q=Samsung+{base}",
+    "Vijay Sales": "https://www.vijaysales.com/search/Samsung%20{base}",
+}
+
+
+def _norm(m):
+    return (m or "").upper().replace(" ", "")
+
+
+def find_fallback_entry(model):
+    """Return demo data for an exact model match (ignores '/NL' style suffix)."""
+    n = _norm(model)
+    if not n:
+        return None
+    for key, prices in DEMO_PRICES.items():
+        k = _norm(key)
+        if n == k or n == k.split("/")[0] or n.split("/")[0] == k.split("/")[0]:
+            base = k.split("/")[0]
+            return {
+                "model": key,
+                "title": f"Samsung 256 L Frost Free Double Door Refrigerator ({key})",
+                "platforms": {
+                    plat: {
+                        "price": price,
+                        "availability": "Available",
+                        "product_url": SEARCH_URLS[plat].format(base=base),
+                    }
+                    for plat, price in prices.items()
+                },
+            }
+    return None
+
+
 # ============================================================
 # LIVE MULTI-PLATFORM PRICE COMPARISON
 # ============================================================
@@ -459,37 +509,8 @@ def live_compare():
     # If live scraping fails or yields unavailable data, populate with verified
     # fallback values clearly tagged as "demo_fallback"
     # ========================================================
-    FALLBACK_PRODUCTS = {
-        "RT30C3732S8/NL": {
-            "model": "RT30C3732S8/NL",
-            "title": "Samsung 256 L Frost Free Double Door Refrigerator (RT30C3732S8/NL)",
-            "platforms": {
-                "Amazon": {
-                    "price": 31750,
-                    "availability": "Available",
-                    "product_url": "https://www.amazon.in/s?k=Samsung+RT30C3732S8"
-                },
-                "Flipkart": {
-                    "price": 31800,
-                    "availability": "Available",
-                    "product_url": "https://www.flipkart.com/search?q=Samsung+RT30C3732S8"
-                },
-                "Vijay Sales": {
-                    "price": 31800,
-                    "availability": "Available",
-                    "product_url": "https://www.vijaysales.com/c/refrigerators/brand/buy-samsung-refrigerators"
-                }
-            }
-        }
-    }
-
-    # Match fallback candidate by normalized model
-    norm_model = (model or "").upper().replace(" ", "")
-    fallback_entry = None
-    for k, v in FALLBACK_PRODUCTS.items():
-        if k.upper().replace(" ", "").split("/")[0] in norm_model or norm_model in k.upper().replace(" ", ""):
-            fallback_entry = v
-            break
+    # Uses the module-level DEMO_PRICES / find_fallback_entry() defined above
+    fallback_entry = find_fallback_entry(model)
 
     # If all three or some returned unavailable, check fallback
     final_results = []
